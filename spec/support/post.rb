@@ -2,17 +2,36 @@ require 'redis/document'
 
 class Post
 
-  autoload :Comment, File.expand_path('../post/comment', __FILE__)
-
   include Redis::Document
+
+  knows_one     :user,    :as => :author
+  knows_many    :users,   :as => :fans
+  includes_many :comments
 
   key :title
   key :body
   key :created_at
+  key :updated_at
 
-  def comments
-    (0..3).map{|index| Comment.new(self, index) }
-  end
+end
+
+class Comment
+
+  include Redis::Document::Namespace
+
+  has_one :user, :as => :author
+
+  key :body
+  key :created_at
+
+end
+
+class User
+
+  include Redis::Document::Namespace
+
+  key :name
+  key :age
 
 end
 

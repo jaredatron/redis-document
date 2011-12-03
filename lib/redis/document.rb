@@ -2,7 +2,13 @@ require 'redis'
 require 'redis/namespace'
 require 'redis/document/version'
 require 'uuid'
+
 require 'active_support'
+require 'active_support/core_ext/array'
+require 'active_support/core_ext/enumerable'
+require 'active_support/core_ext/module/delegation'
+require 'active_support/core_ext/object/try'
+require 'active_support/inflections'
 require 'active_support/concern'
 require 'active_support/buffered_logger'
 require 'active_support/core_ext/benchmark'
@@ -29,6 +35,10 @@ module Redis::Document
 
     def logger
       @logger or self.logger = STDOUT and @logger
+    end
+
+    def associations
+      @associations ||= {}
     end
 
   end
@@ -86,21 +96,21 @@ module Redis::Document
 
     def write_key key, value
       key = key.to_s
-      return false if cache[key] == value
-      cache[key] = value
+      return false if _data_[key] == value
+      _data_[key] = value
       _set_(key, Marshal.dump(value))
       @new_record = false
       true
     end
 
     def read_key key
-      cache[key.to_s]
+      _data_[key.to_s]
     end
 
     def delete_key key
       _delete_ key.to_s
-      cache.delete(key.to_s)
-      @new_record = cache.keys.length == 0
+      _data_.delete(key.to_s)
+      @new_record = _data_.keys.length == 0
     end
 
     def new_record?
@@ -113,13 +123,14 @@ module Redis::Document
       content = ["id: #{id}"] + keys.map{|key| "#{key}: #{read_key(key).inspect}"}
       "#<#{self.class} #{content.join(', ')}>"
     end
+    alias_method :to_s, :inspect
 
     def reload
-      @cache = nil or cache and self
+      @_data_ = nil or _data_ and self
     end
 
     def destroy
-      @cache = nil
+      @_data_ = nil
       @new_record = true
       _destroy_
     end
@@ -130,9 +141,9 @@ module Redis::Document
 
     protected
 
-    def cache
-      @cache ||= _load_.inject({}){ |cache,(field,value)|
-        cache.update field => Marshal.load(value)
+    def _data_
+      @_data_ ||= _load_.inject({}){ |_data_,(field,value)|
+        _data_.update field => Marshal.load(value)
       }
     end
 
@@ -159,6 +170,7 @@ module Redis::Document
 
   end
 
-
-
 end
+
+require 'redis/document/has_one'
+require 'redis/document/has_many'

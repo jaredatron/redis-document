@@ -12,19 +12,22 @@ module Redis::Document::Namespace
 
   module InstanceMethods
 
-    def initialize document, id
-      @document, @id = document, id
-    end
-    attr_reader :document, :id
+    attr_reader :document, :prefix, :index
 
     def write_key key, value
-      document.write_key("#{self.class.name}:#{id}:#{key}", value)
+      document.write_key("#{prefix}:#{index}:#{key}", value)
       true
     end
 
     def read_key key
-      document.read_key("#{self.class.name}:#{id}:#{key}")
+      document.read_key("#{prefix}:#{index}:#{key}")
     end
+
+    def inspect
+      content = ["index: #{index}"] + keys.map{|key| "#{key}: #{read_key(key).inspect}"}
+      "#<#{self.class} #{content.join(', ')}>"
+    end
+    alias_method :to_s, :inspect
 
   end
 

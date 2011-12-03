@@ -116,6 +116,24 @@ describe Redis::Document do
       Post.find(post.id).should be_nil
     end
 
+    describe "#reload" do
+      it "should reload the hash from redis" do
+        post.title = 'zomg'
+        post.should_receive(:_load_).once.and_return({})
+        post.reload
+      end
+    end
+
+    describe "#destroy" do
+      it "should destroy the redis has" do
+        post.title = "a crappy post"
+        Redis::Document.redis.keys.length.should == 1
+        post.destroy
+        Redis::Document.redis.keys.length.should == 0
+        post.new_record?.should be_true
+      end
+    end
+
     it "should log to Redis::Document.logger" do
       post = Post.new
       log_lines.should be_empty

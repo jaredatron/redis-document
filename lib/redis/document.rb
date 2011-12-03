@@ -134,6 +134,12 @@ module Redis::Document
       @cache = nil or cache and self
     end
 
+    def destroy
+      @cache = nil
+      @new_record = true
+      _destroy_
+    end
+
     def benchmark action, &block
       self.class.benchmark(action, id, &block)
     end
@@ -141,27 +147,32 @@ module Redis::Document
     protected
 
     def cache
-      @cache ||= _get_.inject({}){ |cache,(field,value)|
+      @cache ||= _load_.inject({}){ |cache,(field,value)|
         cache.update field => Marshal.load(value)
       }
+    end
+
+    def _exists_
+      benchmark(:exists?){ self.class.redis.exists(id) }
+    end
+
+    def _load_
+      return {} if @new_record == true
+      benchmark(:load){ self.class.redis.hgetall(id) }
     end
 
     def _set_ key, value
       benchmark("write :#{key}"){ self.class.redis.hset(id, key, value) }
     end
 
-    def _get_
-      return {} if @new_record == true
-      benchmark(:load){ self.class.redis.hgetall(id) }
-    end
-
     def _delete_ key
       benchmark("delete :#{key}"){ self.class.redis.hdel(id, key) }
     end
 
-    def _exists_
-      benchmark(:exists?){ self.class.redis.exists(id) }
+    def _destroy_
+      benchmark(:exists?){ self.class.redis.del(id) }
     end
+
   end
 
 

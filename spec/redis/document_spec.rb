@@ -2,6 +2,11 @@ require 'spec_helper'
 
 describe Redis::Document do
 
+  before do
+    Redis::Document.instance_variable_set(:@redis, nil)
+    Post.instance_variable_set(:@redis, nil)
+  end
+
   describe ".redis" do
     subject { Redis::Document.redis }
     it { should be_a Redis }
@@ -9,32 +14,29 @@ describe Redis::Document do
 
   describe ".redis=" do
     it "should set Redis::Document.redis" do
-      thing = stub
-      Redis::Document.redis = thing
-      Redis::Document.redis.should == thing
+      redis = stub
+      Redis::Document.redis = redis
+      Redis::Document.redis.should == redis
     end
   end
 
 
   context "when included into a class" do
 
-    class Post
-      include ActiveModel::AttributeMethods
-      include Redis::Document
-    end
-
     subject{ Post.new }
+    alias_method :post, :subject
 
     describe ".redis" do
       subject { Post.redis }
-      it { should be_a Redis }
+      it { should be_a Redis::Namespace }
     end
 
     describe ".redis=" do
       it "should set Redis::Document.redis" do
-        thing = stub
-        Post.redis = thing
-        Post.redis.should == thing
+        redis = stub
+        Post.redis = redis
+        Post.redis.should be_a Redis::Namespace
+        Post.redis.instance_variable_get(:@redis).should == redis
       end
     end
 
@@ -43,8 +45,43 @@ describe Redis::Document do
       it { should be_a Redis }
     end
 
+    describe "#inspect" do
+      subject { Post.new.inspect }
+      it { should be_a String }
+    end
 
-    it "should "
+    describe "#new_record?" do
+      it "should return true if our key exists in redis" do
+        post = Post.new
+        post.new_record?.should be_true
+        post.title = 'My Second Post'
+        post.new_record?.should be_false
+      end
+    end
+
+    it "should store all of its data in a single redis hash" do
+      post.id.should_not be_nil
+      post.new_record?
+    end
+
+    it "should log to Redis::Document.logger" do
+      post = Post.new
+      log_lines.should be_empty
+
+      post.new_record?
+      log_lines.length.should == 1
+      log_lines.first.should include "Post(#{post.id}) exists?"
+
+      empty_log!
+      post.title = "my first post"
+      log_lines.length.should == 1
+      log_lines.first.should include "Post(#{post.id}) write :title"
+
+      empty_log!
+      Post.find(post.id)
+      log_lines.length.should == 2
+      log_lines.last.should include "Post(#{post.id}) find"
+    end
 
   end
 

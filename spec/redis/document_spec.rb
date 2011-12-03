@@ -55,6 +55,19 @@ describe Redis::Document do
       end
     end
 
+    describe "key" do
+      class Shoe
+        include Redis::Document
+      end
+      subject{ Shoe.new }
+      it "should add attr_accessor methods that read and write to redis" do
+        Shoe.key :color
+        subject.should respond_to :color
+        subject.should respond_to :color=
+        Shoe.keys.should == [:color]
+      end
+    end
+
     describe "#inspect" do
       subject { Post.new.inspect }
       it { should be_a String }

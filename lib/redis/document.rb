@@ -11,6 +11,8 @@ require 'active_model'
 
 module Redis::Document
 
+  autoload :Namespace, 'redis/document/namespace'
+
   extend ActiveSupport::Concern
 
   class << self

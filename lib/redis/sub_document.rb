@@ -1,0 +1,2 @@
+module Redis::SubDocument
+end

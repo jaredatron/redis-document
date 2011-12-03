@@ -8,6 +8,11 @@ class Post
 
   key :title
   key :body
+  key :created_at
+
+  def comments
+    (0..3).map{|index| Comment.new(self, index) }
+  end
 
 end
 

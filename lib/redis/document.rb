@@ -11,6 +11,7 @@ require 'active_model'
 
 module Redis::Document
 
+  autoload :Keys,      'redis/document/keys'
   autoload :Namespace, 'redis/document/namespace'
 
   extend ActiveSupport::Concern
@@ -33,6 +34,7 @@ module Redis::Document
   end
 
   included do
+    include Redis::Document::Keys
     extend ActiveModel::Callbacks
     define_model_callbacks :save, :delete
   end
@@ -45,25 +47,6 @@ module Redis::Document
 
     def redis
       @redis or self.redis = Redis::Document.redis and @redis
-    end
-
-    def keys
-      @keys ||= []
-      (superclass.respond_to?(:keys) ? superclass.keys : []) + @keys
-    end
-
-    def key name
-      @keys ||= []
-      return if @keys.include? name
-      @keys << name
-      class_eval <<-RUBY, __FILE__, __LINE__
-        def #{name}
-          read_key "#{name}"
-        end
-        def #{name}= value
-          write_key "#{name}", value
-        end
-      RUBY
     end
 
     def find id
@@ -125,10 +108,6 @@ module Redis::Document
       @new_record
     end
     alias_method :exists?, :new_record?
-
-    def keys
-      self.class.keys
-    end
 
     def inspect
       content = ["id: #{id}"] + keys.map{|key| "#{key}: #{read_key(key).inspect}"}

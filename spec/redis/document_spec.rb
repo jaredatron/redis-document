@@ -20,6 +20,11 @@ describe Redis::Document do
     end
   end
 
+  context do
+    subject{ Factory.document.new }
+    it_should_behave_like "it has keys"
+  end
+
   context "when included into a class" do
 
     subject{ Post.new }
@@ -41,7 +46,7 @@ describe Redis::Document do
 
     describe ".keys" do
       it "should return an array of the documents keys" do
-        Post.keys.should == [:title, :body]
+        Post.keys.should == [:title, :body, :created_at]
       end
     end
 
@@ -49,21 +54,8 @@ describe Redis::Document do
       subject{ AwesomePost.new }
       describe ".keys" do
         it "should return an array of the documents keys including its ancestors" do
-          AwesomePost.keys.should == [:title, :body, :animated_gif]
+          AwesomePost.keys.should == [:title, :body, :created_at, :animated_gif]
         end
-      end
-    end
-
-    describe "key" do
-      class Shoe
-        include Redis::Document
-      end
-      subject{ Shoe.new }
-      it "should add attr_accessor methods that read and write to redis" do
-        Shoe.key :color
-        subject.should respond_to :color
-        subject.should respond_to :color=
-        Shoe.keys.should == [:color]
       end
     end
 

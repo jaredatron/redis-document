@@ -40,9 +40,19 @@ describe Redis::Document do
       end
     end
 
-    describe ".redis" do
-      subject { Redis::Document.redis }
-      it { should be_a Redis }
+    describe ".keys" do
+      it "should return an array of the documents keys" do
+        Post.keys.should == [:title, :body]
+      end
+    end
+
+    context "and subclassed" do
+      subject{ AwesomePost.new }
+      describe ".keys" do
+        it "should return an array of the documents keys including its ancestors" do
+          AwesomePost.keys.should == [:title, :body, :animated_gif]
+        end
+      end
     end
 
     describe "#inspect" do

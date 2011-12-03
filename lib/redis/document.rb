@@ -47,7 +47,7 @@ module Redis::Document
 
     def keys
       @keys ||= []
-      @keys + (superclass.respond_to?(:keys) ? superclass.keys : [])
+      (superclass.respond_to?(:keys) ? superclass.keys : []) + @keys
     end
 
     def key name

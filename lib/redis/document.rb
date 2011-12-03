@@ -96,10 +96,6 @@ module Redis::Document
       @id ||= UUID.generate
     end
 
-    def read_key key
-      cache[key.to_s]
-    end
-
     def write_key key, value
       key = key.to_s
       return false if cache[key] == value
@@ -107,6 +103,16 @@ module Redis::Document
       _set_(key, Marshal.dump(value))
       @new_record = false
       true
+    end
+
+    def read_key key
+      cache[key.to_s]
+    end
+
+    def delete_key key
+      _delete_ key.to_s
+      cache.delete(key.to_s)
+      @new_record = cache.keys.length == 0
     end
 
     def new_record?
@@ -135,7 +141,13 @@ module Redis::Document
     protected
 
     def cache
-      @cache ||= _get_.inject({}){ |cache,(field,value)| cache.update field => Marshal.load(value) }
+      @cache ||= _get_.inject({}){ |cache,(field,value)|
+        cache.update field => Marshal.load(value)
+      }
+    end
+
+    def _set_ key, value
+      benchmark("write :#{key}"){ self.class.redis.hset(id, key, value) }
     end
 
     def _get_
@@ -143,8 +155,8 @@ module Redis::Document
       benchmark(:load){ self.class.redis.hgetall(id) }
     end
 
-    def _set_ key, value
-      benchmark("write :#{key}"){ self.class.redis.hset(id, key, value) }
+    def _delete_ key
+      benchmark("delete :#{key}"){ self.class.redis.hdel(id, key) }
     end
 
     def _exists_

@@ -20,7 +20,6 @@ describe Redis::Document do
     end
   end
 
-
   context "when included into a class" do
 
     subject{ Post.new }
@@ -84,7 +83,37 @@ describe Redis::Document do
 
     it "should store all of its data in a single redis hash" do
       post.id.should_not be_nil
-      post.new_record?
+      post.new_record?.should be_true
+
+      post.title = 'My First Post'
+      post.title.should == 'My First Post'
+      post.read_key(:title).should == 'My First Post'
+      post.new_record?.should be_false
+      post.class.redis.keys.should == [post.id]
+      post.class.redis.hkeys(post.id).should == ['title']
+
+      Post.find(post.id).title.should == 'My First Post'
+
+      post.delete_key :title
+      post.title.should be_nil
+      post.read_key(:title).should be_nil
+      post.new_record?.should be_true
+      Post.find(post.id).should be_nil
+
+      post.write_key(:title, 'My Second Post')
+      post.title.should == 'My Second Post'
+      post.read_key(:title).should == 'My Second Post'
+      post.new_record?.should be_false
+      post.class.redis.keys.should == [post.id]
+      post.class.redis.hkeys(post.id).should == ['title']
+
+      Post.find(post.id).title.should == 'My Second Post'
+
+      post.delete_key :title
+      post.title.should be_nil
+      post.read_key(:title).should be_nil
+      post.new_record?.should be_true
+      Post.find(post.id).should be_nil
     end
 
     it "should log to Redis::Document.logger" do

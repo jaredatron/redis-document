@@ -46,7 +46,7 @@ describe Redis::Document do
 
     describe ".keys" do
       it "should return an array of the documents keys" do
-        Post.keys.should == [:title, :body, :created_at]
+        Post.keys.should == [:id, :title, :body, :created_at]
       end
     end
 
@@ -54,12 +54,21 @@ describe Redis::Document do
       subject{ AwesomePost.new }
       describe ".keys" do
         it "should return an array of the documents keys including its ancestors" do
-          AwesomePost.keys.should == [:title, :body, :created_at, :animated_gif]
+          AwesomePost.keys.should == [:id, :title, :body, :created_at, :animated_gif]
         end
       end
     end
 
-    describe "#new" do
+    describe ".find" do
+      it "should return nil when not finding" do
+        Post.find(nil).should be_nil
+        Post.find('231f1a2a3').should be_nil
+        Post.find(214343).should be_nil
+        Post.find(Post.new.save.id).should be_a Post
+      end
+    end
+
+    describe ".new" do
       it "should not try and load if it generates and id" do
         Post.new.inspect
         log.should == ""
@@ -76,68 +85,80 @@ describe Redis::Document do
         post = Post.new
         post.new_record?.should be_true
         post.title = 'My Second Post'
+        post.new_record?.should be_true
+        post.save
         post.new_record?.should be_false
       end
     end
 
     it "should store all of its data in a single redis hash" do
-      post.id.should_not be_nil
+      post.id.should be_nil
       post.new_record?.should be_true
 
       post.title = 'My First Post'
       post.title.should == 'My First Post'
-      post.read_key(:title).should == 'My First Post'
+      post.get_key(:title).should == 'My First Post'
+      post.new_record?.should be_true
+      post.save
       post.new_record?.should be_false
-      post.class.redis.keys.should == [post.id]
-      post.class.redis.hkeys(post.id).should == ['title']
 
       Post.find(post.id).title.should == 'My First Post'
 
-      post.delete_key :title
-      post.title.should be_nil
-      post.read_key(:title).should be_nil
-      post.new_record?.should be_true
-      Post.find(post.id).should be_nil
+      # post.delete_key :title
+      # post.title.should be_nil
+      # post.read_key(:title).should be_nil
+      # post.new_record?.should be_true
+      # Post.find(post.id).should be_nil
 
-      post.write_key(:title, 'My Second Post')
-      post.title.should == 'My Second Post'
-      post.read_key(:title).should == 'My Second Post'
-      post.new_record?.should be_false
-      post.class.redis.keys.should == [post.id]
-      post.class.redis.hkeys(post.id).should == ['title']
+      # post.write_key(:title, 'My Second Post')
+      # post.title.should == 'My Second Post'
+      # post.read_key(:title).should == 'My Second Post'
+      # post.new_record?.should be_false
+      # post.class.redis.keys.should == [post.id]
+      # post.class.redis.hkeys(post.id).should == ['title']
 
-      Post.find(post.id).title.should == 'My Second Post'
+      # Post.find(post.id).title.should == 'My Second Post'
 
-      post.delete_key :title
-      post.title.should be_nil
-      post.read_key(:title).should be_nil
-      post.new_record?.should be_true
-      Post.find(post.id).should be_nil
+      # post.delete_key :title
+      # post.title.should be_nil
+      # post.read_key(:title).should be_nil
+      # post.new_record?.should be_true
+      # Post.find(post.id).should be_nil
     end
 
     describe "#reload" do
-      it "should reload the hash from redis" do
-        post.title = 'zomg'
-        post.should_receive(:_load_).once.and_return({})
-        post.reload
+      it "should values from" do
+        post1 = Post.new
+        post1.title = 'zomg'
+        post1.save
+
+        post2 = Post.find(post1.id)
+        post2.title.should == 'zomg'
+        post2.title = 'boosh'
+        post2.save
+
+        post1.title.should == 'zomg'
+        post1.reload
+        post1.title.should == 'boosh'
       end
       it "should not make a request to redis if its a new record" do
-        Post.should_not_receive(:redis)
-        Post.new.reload
+        post.should_not_receive(:redis)
+        post.reload
       end
     end
 
     describe "#destroy" do
       it "should destroy the redis has" do
         post.title = "a crappy post"
-        Redis::Document.redis.keys.length.should == 1
+        post.save
+        Redis::Document.redis.keys.length.should == post.keys.size
         post.destroy
         Redis::Document.redis.keys.length.should == 0
         post.new_record?.should be_true
       end
     end
 
-    it "should log to Redis::Document.logger" do
+    pending "should log to Redis::Document.logger" do
       post = Post.new
       log_lines.should be_empty
 

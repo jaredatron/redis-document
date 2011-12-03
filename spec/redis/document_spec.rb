@@ -20,11 +20,6 @@ describe Redis::Document do
     end
   end
 
-  # context do
-  #   subject{ Factory.document.new }
-  #   it_should_behave_like "it has keys"
-  # end
-
   context "when included into a class" do
 
     subject{ Post.new }
@@ -41,6 +36,43 @@ describe Redis::Document do
         Post.redis = redis
         Post.redis.should be_a Redis::Namespace
         Post.redis.instance_variable_get(:@redis).should == redis
+      end
+    end
+
+    describe ".key" do
+      subject{ Factory.document }
+      it "should" do
+        subject.key :color
+        subject.new.should respond_to :color
+        subject.new.should respond_to :color=
+        subject.new.keys.should == [:id, :color]
+        subject.keys.should == [:id, :color]
+      end
+
+      CLASSES = [Symbol, String, Integer, Float, Time, Array, Hash]
+      VALUES  = [:boosh, 'Love', 42, 10.5, Time.now, [:an,'array'], {:a=>'hash'}]
+      it "should marshal objects keys" do
+        CLASSES.each{|klass| subject.key :"a_#{klass}"}
+
+        instance = subject.new
+        CLASSES.zip(VALUES).each{|klass, value|
+          instance.send(:"a_#{klass}=", value)
+          instance.send(:"a_#{klass}").should be_a klass
+          instance.send(:"a_#{klass}").should == value
+        }
+
+        instance.save
+        instance.reload
+        CLASSES.zip(VALUES).each{|klass, value|
+          instance.send(:"a_#{klass}").should be_a klass
+          instance.send(:"a_#{klass}").should == value
+        }
+
+        instance = subject.find(instance)
+        CLASSES.zip(VALUES).each{|klass, value|
+          instance.send(:"a_#{klass}").should be_a klass
+          instance.send(:"a_#{klass}").should == value
+        }
       end
     end
 
@@ -103,27 +135,6 @@ describe Redis::Document do
       post.new_record?.should be_false
 
       Post.find(post.id).title.should == 'My First Post'
-
-      # post.delete_key :title
-      # post.title.should be_nil
-      # post.read_key(:title).should be_nil
-      # post.new_record?.should be_true
-      # Post.find(post.id).should be_nil
-
-      # post.write_key(:title, 'My Second Post')
-      # post.title.should == 'My Second Post'
-      # post.read_key(:title).should == 'My Second Post'
-      # post.new_record?.should be_false
-      # post.class.redis.keys.should == [post.id]
-      # post.class.redis.hkeys(post.id).should == ['title']
-
-      # Post.find(post.id).title.should == 'My Second Post'
-
-      # post.delete_key :title
-      # post.title.should be_nil
-      # post.read_key(:title).should be_nil
-      # post.new_record?.should be_true
-      # Post.find(post.id).should be_nil
     end
 
     describe "#reload" do

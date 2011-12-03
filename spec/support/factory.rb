@@ -8,12 +8,6 @@ module Factory
     end
   end
 
-  def namespace name = 'ExampleRedisDocumentNamespace'
-    named_anonymous_class(name) do
-      include Redis::Document::Namespace
-    end
-  end
-
   def named_anonymous_class name, &block
     name_proc = proc { name }
     klass = Class.new

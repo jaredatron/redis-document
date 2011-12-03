@@ -67,6 +67,13 @@ describe Redis::Document do
       end
     end
 
+    describe "#new" do
+      it "should not try and load if it generates and id" do
+        Post.new.inspect
+        log.should == ""
+      end
+    end
+
     describe "#inspect" do
       subject { Post.new.inspect }
       it { should be_a String }
@@ -121,6 +128,10 @@ describe Redis::Document do
         post.title = 'zomg'
         post.should_receive(:_load_).once.and_return({})
         post.reload
+      end
+      it "should not make a request to redis if its a new record" do
+        Post.should_not_receive(:redis)
+        Post.new.reload
       end
     end
 

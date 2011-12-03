@@ -93,7 +93,10 @@ module Redis::Document
     end
 
     def id
-      @id ||= UUID.generate
+      @id ||= begin
+        @new_record = true
+        UUID.generate
+      end
     end
 
     def write_key key, value
@@ -157,7 +160,7 @@ module Redis::Document
     end
 
     def _load_
-      return {} if @new_record == true
+      return {} if id.nil? || @new_record == true
       benchmark(:load){ self.class.redis.hgetall(id) }
     end
 

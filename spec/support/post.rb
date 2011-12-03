@@ -6,7 +6,7 @@ class Post
 
   # knows_one     :user,    :as => :author
   # knows_many    :users,   :as => :fans
-  # includes_many :comments
+  # contains_many :comments
 
   key :title
   key :body

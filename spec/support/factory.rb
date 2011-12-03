@@ -5,6 +5,7 @@ module Factory
   def document name = 'ExampleRedisDocument'
     named_anonymous_class(name) do
       include Redis::Document
+      yield if block_given?
     end
   end
 

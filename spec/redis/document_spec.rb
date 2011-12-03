@@ -20,10 +20,10 @@ describe Redis::Document do
     end
   end
 
-  context do
-    subject{ Factory.document.new }
-    it_should_behave_like "it has keys"
-  end
+  # context do
+  #   subject{ Factory.document.new }
+  #   it_should_behave_like "it has keys"
+  # end
 
   context "when included into a class" do
 

@@ -4,6 +4,7 @@ class Post
 
   include Redis::Document
 
+  contains_one  :video
   # knows_one     :user,    :as => :author
   # knows_many    :users,   :as => :fans
   # contains_many :comments
@@ -11,6 +12,14 @@ class Post
   key :title
   key :body
   key :created_at
+
+end
+
+class Video
+
+  include Redis::Document
+
+  key :url
 
 end
 

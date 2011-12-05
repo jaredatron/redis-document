@@ -15,7 +15,7 @@ class Post
 
 end
 
-class Video
+class Post::Video
 
   include Redis::Document
 
@@ -23,25 +23,25 @@ class Video
 
 end
 
-# class Comment
+class Post::Comment
 
-#   include Redis::Document::Namespace
+  include Redis::Document
 
-#   has_one :user, :as => :author
+  # knows_one :user, :as => :author
 
-#   key :body
-#   key :created_at
+  key :body
+  key :created_at
 
-# end
+end
 
-# class User
+class User
 
-#   include Redis::Document::Namespace
+  include Redis::Document
 
-#   key :name
-#   key :age
+  key :name
+  key :age
 
-# end
+end
 
 
 class AwesomePost < Post

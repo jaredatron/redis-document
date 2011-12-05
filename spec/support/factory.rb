@@ -2,10 +2,10 @@ module Factory
 
   extend self
 
-  def document name = 'ExampleRedisDocument'
+  def document name = 'ExampleRedisDocument', &block
     named_anonymous_class(name) do
       include Redis::Document
-      yield if block_given?
+      class_eval(&block) if block_given?
     end
   end
 

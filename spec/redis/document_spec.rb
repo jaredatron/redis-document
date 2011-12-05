@@ -77,16 +77,20 @@ describe Redis::Document do
     end
 
     describe ".keys" do
+      subject{ Factory.document{ key :size } }
       it "should return an array of the documents keys" do
-        Post.keys.should == [:id, :title, :body, :created_at]
+        subject.keys.should == [:id, :size]
       end
     end
 
     context "and subclassed" do
-      subject{ AwesomePost.new }
+      subject{
+        superclass = Factory.document{ key :size }
+        Class.new(superclass){ key :state }
+      }
       describe ".keys" do
         it "should return an array of the documents keys including its ancestors" do
-          AwesomePost.keys.should == [:id, :title, :body, :created_at, :animated_gif]
+          subject.keys.should == [:id, :size, :state]
         end
       end
     end

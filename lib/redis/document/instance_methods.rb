@@ -2,6 +2,10 @@ module Redis::Document::InstanceMethods
 
   InvalidKey = Class.new(StandardError)
 
+  def initialize keys=nil
+    update_keys(keys) if keys
+  end
+
   def keys
     self.class.keys
   end
@@ -32,6 +36,10 @@ module Redis::Document::InstanceMethods
     value
   end
 
+  def update_keys hash
+    hash.each_pair{|key, value| set_key key, value }
+  end
+
   def values
     keys.inject({}){ |values, key| values[key] = get_key(key); values }
   end
@@ -45,10 +53,12 @@ module Redis::Document::InstanceMethods
   end
 
   def save
-    self.id ||= UUID.generate
-    benchmark(:save){
-      redis.multi{ keys.each{ |key| set_key! key } }
-    }
+    run_callbacks :save do
+      self.id ||= UUID.generate
+      benchmark(:save){
+        redis.multi{ keys.each{ |key| set_key! key } }
+      }
+    end
     self
   end
 
@@ -72,6 +82,14 @@ module Redis::Document::InstanceMethods
     "#<#{self.class} #{content.join(', ')}>"
   end
   alias_method :to_s, :inspect
+
+  def == other
+    other.is_a?(self.class) ? id == other.id : super
+  end
+
+  # def <=> other
+    # TODO
+  # end
 
   private
 

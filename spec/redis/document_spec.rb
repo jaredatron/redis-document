@@ -2,6 +2,9 @@ require 'spec_helper'
 
 describe Redis::Document do
 
+  subject { Redis::Document }
+  alias_method :document, :subject
+
   before do
     Redis::Document.instance_variable_set(:@redis, nil)
     Post.instance_variable_set(:@redis, nil)
@@ -15,8 +18,16 @@ describe Redis::Document do
   describe ".redis=" do
     it "should set Redis::Document.redis" do
       redis = stub
-      Redis::Document.redis = redis
-      Redis::Document.redis.should == redis
+      document.redis = redis
+      document.redis.should == redis
+    end
+  end
+
+  describe ".new" do
+    pending "should take a hash and call update_keys with it" do
+      hash = {:this => 'is', :my => 'hash'}
+      document.any_instance.should_receive(:update_keys).once.with(hash)
+      document.new(hash)
     end
   end
 
@@ -126,21 +137,6 @@ describe Redis::Document do
         post.new_record?.should be_false
       end
     end
-
-    it "should store all of its data in a single redis hash" do
-      post.id.should be_nil
-      post.new_record?.should be_true
-
-      post.title = 'My First Post'
-      post.title.should == 'My First Post'
-      post.get_key(:title).should == 'My First Post'
-      post.new_record?.should be_true
-      post.save
-      post.new_record?.should be_false
-
-      Post.find(post.id).title.should == 'My First Post'
-    end
-
     describe "#reload" do
       it "should values from" do
         post1 = Post.new
@@ -172,6 +168,44 @@ describe Redis::Document do
         post.new_record?.should be_true
       end
     end
+
+    describe "#update_keys" do
+      it "should take a hash and update it's self" do
+        now = Time.now
+        post.update_keys(
+          :title      => "a fun thing to read",
+          :body       => "This is the best post ive ever written.",
+          :created_at => now
+        )
+        post.title.should == "a fun thing to read"
+        post.body.should == "This is the best post ive ever written."
+        post.created_at.should == now
+        post.new_record?.should be_true
+      end
+    end
+
+    it "should judge equality based on id" do
+      id = Post.new.tap(&:save).id
+      post1 = Post.find(id)
+      post2 = Post.find(id)
+      post1.should == post2
+    end
+
+
+    it "should store all of its data in a single redis hash" do
+      post.id.should be_nil
+      post.new_record?.should be_true
+
+      post.title = 'My First Post'
+      post.title.should == 'My First Post'
+      post.get_key(:title).should == 'My First Post'
+      post.new_record?.should be_true
+      post.save
+      post.new_record?.should be_false
+
+      Post.find(post.id).title.should == 'My First Post'
+    end
+
 
     pending "should log to Redis::Document.logger" do
       post = Post.new

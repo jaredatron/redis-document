@@ -17,10 +17,6 @@ require 'active_model'
 
 module Redis::Document
 
-  autoload :ClassMethods,    'redis/document/class_methods'
-  autoload :InstanceMethods, 'redis/document/instance_methods'
-  autoload :Associations,    'redis/document/associations'
-
   extend ActiveSupport::Concern
 
   class << self
@@ -53,5 +49,6 @@ module Redis::Document
 
 end
 
-# require 'redis/document/has_one'
-# require 'redis/document/has_many'
+require 'redis/document/class_methods'
+require 'redis/document/instance_methods'
+require 'redis/document/associations'

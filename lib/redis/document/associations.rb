@@ -15,6 +15,6 @@ module Redis::Document
 end
 
 require 'redis/document/associations/contains_one'
-# require 'redis/document/associations/contains_many'
-# require 'redis/document/associations/knows_one'
+require 'redis/document/associations/contains_many'
+require 'redis/document/associations/knows_one'
 # require 'redis/document/associations/knows_many'

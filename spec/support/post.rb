@@ -4,7 +4,7 @@ class Post
 
   include Redis::Document
 
-  contains_one  :video
+  # contains_one  :video
   # knows_one     :user,    :as => :author
   # knows_many    :users,   :as => :fans
   # contains_many :comments

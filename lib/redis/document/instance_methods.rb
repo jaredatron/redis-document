@@ -91,11 +91,12 @@ module Redis::Document::InstanceMethods
     # TODO
   # end
 
-  private
 
   def redis
-    @redis = Redis::Namespace.new(id, :redis => self.class.redis)
+    @redis = Redis::Namespace.new(id, :redis => self.class.redis) if id.present?
   end
+
+  private
 
   def load id = self.id
     return if id.nil?

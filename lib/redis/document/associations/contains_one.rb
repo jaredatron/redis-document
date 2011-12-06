@@ -4,80 +4,39 @@ module Redis::Document
     # embeds a subdocument using a redis namespace
     # - subdocuments dont needs IDS
     def contains_one class_name, options = {}
-      class_name = class_name.to_s.classify unless class_name.is_a? Class
+      class_name = class_name.to_s.classify
       name  = (options[:as] || class_name).to_s.underscore
 
-      #TODO subclass Video changes its redis to be a namespace of the given document
-      associations[name.to_sym] = Associations::ContainsOne.new(self, name, class_name)
-
       class_eval <<-RUBY, __FILE__, __LINE__
-        key "#{name}_id"
+        def self.#{name}_class
+          @#{name}_class ||= Class.new(#{class_name}).tap{|klass|
+            klass.send(:include, Associations::ContainsOne)
+          }
+        end
 
         def #{name}
-          @#{name} ||= begin
-            id = send(:"#{name}_id") or return
-            self.class.associations[#{name.to_sym.inspect}].class.find(id)
-          end
+          parent_document = self
+          @#{name} ||= self.class.#{name}_class.new.tap{|instance|
+            instance.instance_variable_set(:@parent_document, self)
+            instance.instance_variable_set(:@association_name, "#{name}")
+          }
         end
 
-        def #{name}= document
-          @#{name} = document
-          send :#{name}_id=, document.id
-        end
-
-        before_save do
-          # TODO worry about circular references
-          if @#{name} && @#{name}.new_record?
-            @#{name}.save
-            self.#{name}= @#{name}
-          end
+        after_save do
+          self.#{name}.save
         end
 
       RUBY
     end
   end
 
-  class Associations::ContainsOne
-
-    def initialize document, name, class_name
-      @document, @name, @class_name = document, name, class_name
-    end
-    attr_reader :document, :name, :class_name
-
-    def class
-      @class ||= begin
-        "#{document}::#{class_name}".constantize
-      rescue NameError
-        class_name.constantize
+  module Associations::ContainsOne
+    def redis
+      if redis = @parent_document.send(:redis)
+        @redis = Redis::Namespace.new(@association_name, :redis => redis)
       end
     end
 
   end
 
 end
-
-
-    # ??? this is more like knows_one
-    # def contains_one klass, options = {}
-    #   klass = klass.to_s.classify unless klass.is_a? Class
-    #   name  = (options[:as] || klass).to_s.underscore
-    #   # options[:as] ||= name
-    #   # associations[name.to_sym] = Associations::ContainsOne.new(options)
-
-    #   class_eval <<-RUBY, __FILE__, __LINE__
-    #     key "#{name}_id"
-
-    #     def #{name}
-    #       # @#{name} ||= self.class.associations[#{name.to_sym.inspect}].for(self)
-    #       @#{name} ||= begin
-    #         id = send(:#{name}_id)
-    #         #{klass}.find(id) if id
-    #       end
-    #     end
-
-    #     def #{name}= document
-    #       @#{name} = document
-    #       send :#{name}_id=,  document.id
-    #     end
-    #   RUBY
-    # end

@@ -20,6 +20,7 @@ describe Redis::Document do
 
       it "should store that objects data in a namespace" do
         car.wheels.should == []
+        car.wheels.inspect.should == '[]'
         car.wheels.length.should == 0
         car.wheels.new.should be_a Car::Wheel
         car.wheels.length.should == 1

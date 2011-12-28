@@ -78,7 +78,7 @@ describe Redis::Document do
 
     describe ".keys" do
       it "should return an array of the documents keys" do
-        Post.keys.should == [:id, :title, :body, :created_at]
+        Post.keys.to_set.should == Set[:id, :video_id, :title, :body, :created_at]
       end
     end
 
@@ -86,7 +86,7 @@ describe Redis::Document do
       subject{ AwesomePost.new }
       describe ".keys" do
         it "should return an array of the documents keys including its ancestors" do
-          AwesomePost.keys.should == [:id, :title, :body, :created_at, :animated_gif]
+          AwesomePost.keys.to_set.should == Set[:id, :video_id, :title, :body, :created_at, :animated_gif]
         end
       end
     end

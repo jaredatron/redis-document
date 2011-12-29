@@ -1,4 +1,5 @@
 require 'redis'
+require 'redis/data_set'
 require 'redis/namespace'
 require 'redis/document/version'
 require 'uuid'
@@ -16,10 +17,6 @@ require 'active_support/core_ext/benchmark'
 require 'active_model'
 
 module Redis::Document
-
-  autoload :ClassMethods,    'redis/document/class_methods'
-  autoload :InstanceMethods, 'redis/document/instance_methods'
-  autoload :Associations,    'redis/document/associations'
 
   extend ActiveSupport::Concern
 
@@ -53,5 +50,10 @@ module Redis::Document
 
 end
 
-# require 'redis/document/has_one'
-# require 'redis/document/has_many'
+require 'redis/document/class_methods'
+require 'redis/document/instance_methods'
+require 'redis/document/associations/contains_one'
+require 'redis/document/associations/contains_many'
+require 'redis/document/associations/knows_one'
+require 'redis/document/associations/knows_many'
+
